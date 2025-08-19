@@ -1,0 +1,12 @@
+# # Ignore everything
+# *
+
+# # But keep the README file
+# !README.md
+
+# # Keep .gitignore itself
+# !.gitignore
+
+
+node_modules
+dipex-gps-main

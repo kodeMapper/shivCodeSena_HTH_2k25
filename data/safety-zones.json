@@ -1,0 +1,17 @@
+{
+  "zone_1755553716845_8y4tqujp9": {
+    "id": "zone_1755553716845_8y4tqujp9",
+    "name": "bkbkjb",
+    "type": "custom",
+    "coordinates": {
+      "latitude": 21.199643044482315,
+      "longitude": 79.07274217217368
+    },
+    "radius": 2000,
+    "enabled": true,
+    "notifyEntry": true,
+    "notifyExit": true,
+    "ownerId": "user1",
+    "createdAt": "2025-08-18T21:48:36.845Z"
+  }
+}
