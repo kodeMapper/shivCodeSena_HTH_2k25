@@ -1,0 +1,2711 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartVision - Family Safety Tracker</title>
+  <!-- Leaflet CSS/JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <!-- Animate.css -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary-color: #4361ee;
+      --primary-light: #6a7fee;
+      --primary-dark: #2a4bd1;
+      --secondary-color: #3f37c9;
+      --accent-color: #4cc9f0;
+      --light-color: #f8f9fa;
+      --dark-color: #212529;
+      --gray-color: #6c757d;
+      --light-gray: #e9ecef;
+      --success-color: #4bb543;
+      --warning-color: #ffcc00;
+      --danger-color: #ff3333;
+      --glass-bg: rgba(255, 255, 255, 0.15);
+      --glass-border: rgba(255, 255, 255, 0.18);
+      --sidebar-width: 280px;
+      --sidebar-collapsed: 80px;
+      --transition-speed: 0.3s;
+    }
+
+    .dark-mode {
+      --light-color: #212529;
+      --dark-color: #f8f9fa;
+      --gray-color: #adb5bd;
+      --light-gray: #343a40;
+      --glass-bg: rgba(0, 0, 0, 0.2);
+      --glass-border: rgba(0, 0, 0, 0.25);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      color: var(--dark-color);
+      overflow-x: hidden;
+      transition: background 0.5s ease;
+    }
+
+    body.dark-mode {
+      background: linear-gradient(135deg, #121212 0%, #1e1e1e 100%);
+    }
+
+    #app-container {
+      display: flex;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    /* Sidebar - Glassmorphism Design */
+    #sidebar {
+      width: var(--sidebar-width);
+      background: linear-gradient(135deg, rgba(67, 97, 238, 0.9), rgba(63, 55, 201, 0.9));
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: white;
+      padding: 20px;
+      box-shadow: 2px 0 15px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      transition: all var(--transition-speed) ease;
+      position: relative;
+      border-right: 1px solid var(--glass-border);
+    }
+
+    .sidebar-collapsed {
+      width: var(--sidebar-collapsed) !important;
+    }
+
+    .sidebar-collapsed .logo h1,
+    .sidebar-collapsed .user-info,
+    .sidebar-collapsed .menu-text,
+    .sidebar-collapsed .sidebar-footer {
+      display: none;
+    }
+
+    .sidebar-collapsed .logo {
+      justify-content: center;
+    }
+
+    .sidebar-collapsed .sidebar-menu a {
+      justify-content: center;
+    }
+
+    .sidebar-collapsed .sidebar-menu i {
+      margin-right: 0;
+      font-size: 18px;
+    }
+
+    .toggle-sidebar {
+      position: absolute;
+      top: 20px;
+      right: -15px;
+      background: white;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+      z-index: 1001;
+      transition: all 0.3s ease;
+    }
+
+    .toggle-sidebar:hover {
+      transform: scale(1.1);
+      box-shadow: 0 3px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .toggle-sidebar i {
+      color: var(--primary-color);
+      transition: transform var(--transition-speed) ease;
+    }
+
+    .sidebar-collapsed .toggle-sidebar i {
+      transform: rotate(180deg);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .logo i {
+      font-size: 28px;
+      margin-right: 10px;
+      color: var(--accent-color);
+    }
+
+    .logo h1 {
+      font-size: 20px;
+      font-weight: 600;
+      transition: opacity var(--transition-speed) ease;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      margin-bottom: 30px;
+      padding: 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .user-profile:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .user-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background-color: var(--accent-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 15px;
+      font-size: 20px;
+      font-weight: bold;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .user-info h3 {
+      font-size: 16px;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+
+    .user-info p {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .sidebar-menu {
+      list-style: none;
+    }
+
+    .sidebar-menu li {
+      margin-bottom: 8px;
+    }
+
+    .sidebar-menu a {
+      display: flex;
+      align-items: center;
+      color: white;
+      text-decoration: none;
+      padding: 12px 15px;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .sidebar-menu a:hover,
+    .sidebar-menu a.active {
+      background-color: rgba(255, 255, 255, 0.2);
+      transform: translateX(5px);
+    }
+
+    .sidebar-menu a.active {
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.3), transparent);
+    }
+
+    .sidebar-menu i {
+      margin-right: 10px;
+      width: 20px;
+      text-align: center;
+      transition: margin var(--transition-speed) ease;
+    }
+
+    .menu-text {
+      transition: opacity var(--transition-speed) ease;
+    }
+
+    .sidebar-footer {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      font-size: 12px;
+      opacity: 0.7;
+      transition: opacity var(--transition-speed) ease;
+      text-align: center;
+    }
+
+    /* Main Content */
+    #main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      transition: margin-left var(--transition-speed) ease;
+    }
+
+    /* Header - Glassmorphism Design */
+    #header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 30px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      z-index: 999;
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    .dark-mode #header {
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .header-left h2 {
+      font-size: 18px;
+      font-weight: 600;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .theme-toggle:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: rotate(30deg);
+    }
+
+    .notification-bell {
+      position: relative;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      transition: all 0.3s ease;
+    }
+
+    .notification-bell:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: translateY(-2px);
+    }
+
+    .notification-bell i {
+      font-size: 18px;
+      color: var(--dark-color);
+    }
+
+    .dark-mode .notification-bell i {
+      color: white;
+    }
+
+    .notification-badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background-color: var(--danger-color);
+      color: white;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: bold;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.1);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    /* Map Container */
+    #map-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #map {
+      height: 100%;
+      width: 100%;
+      transition: filter 0.3s ease;
+    }
+
+    /* Map Controls */
+    .map-controls {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .control-btn {
+      background-color: white;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--dark-color);
+      transition: all 0.3s ease;
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+    }
+
+    .dark-mode .control-btn {
+      color: var(--light-color);
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .control-btn:hover {
+      background-color: var(--primary-color);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Map Type Selector */
+    .map-type-selector {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 1000;
+      background: var(--glass-bg);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--glass-border);
+      display: flex;
+    }
+
+    .map-type-btn {
+      padding: 8px 15px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      color: whitesmoke;
+      transition: all 0.3s ease;
+    }
+
+    .dark-mode .map-type-btn {
+      color: white;
+    }
+
+    .map-type-btn i {
+      margin-right: 8px;
+    }
+
+    .map-type-btn.active {
+      background-color: var(--primary-color);
+      color: white;
+    }
+
+    .map-type-btn:not(.active):hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Status Card - Glassmorphism Design */
+    .status-card {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      z-index: 1000;
+      background: var(--glass-bg);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      width: 300px;
+      border: 1px solid var(--glass-border);
+      transform: translateY(0);
+      transition: all 0.3s ease;
+    }
+
+    .status-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .status-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .status-header h3 {
+      font-size: 16px;
+      font-weight: 600;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .status-badge {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      background-color: var(--success-color);
+      color: white;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .status-badge.warning {
+      background-color: var(--warning-color);
+      color: var(--dark-color);
+    }
+
+    .status-badge.danger {
+      background-color: var(--danger-color);
+    }
+
+    .status-details {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .detail-row:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    .detail-label {
+      font-size: 13px;
+      color: black;
+    }
+
+    .dark-mode .detail-label {
+      color: var(--light-gray);
+    }
+
+    .detail-value {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    /* History Button */
+    .history-btn {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .history-btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .history-btn i {
+      margin-right: 8px;
+    }
+
+    /* Custom Popup */
+    .leaflet-popup-content {
+      margin: 10px;
+    }
+
+    .leaflet-popup-content-wrapper {
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      background: var(--glass-bg);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--glass-border);
+    }
+
+    .custom-popup {
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .popup-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: rgb(0, 0, 100);
+    }
+
+    .popup-address {
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+
+    .dark-mode .popup-address {
+      color: #01b69c;
+    }
+
+    .popup-time {
+      font-size: 11px;
+      color: black;
+    }
+
+    /* Panel Styles */
+    .panel {
+      position: fixed;
+      top: 0;
+      right: -400px;
+      width: 400px;
+      height: 100vh;
+      background: var(--glass-bg);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      box-shadow: -5px 0 25px rgba(0, 0, 0, 0.1);
+      z-index: 2000;
+      transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+      padding: 25px;
+      overflow-y: auto;
+      border-left: 1px solid var(--glass-border);
+    }
+
+    .dark-mode .panel {
+      box-shadow: -5px 0 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .panel.visible {
+      right: 0;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      color: #00000096;
+    }
+
+    .history-location {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    /* Notification Item */
+    .notification-item {
+      display: flex;
+      margin-bottom: 15px;
+      padding: 15px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .dark-mode .notification-item {
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .notification-item.unread {
+      background: rgba(67, 97, 238, 0.15);
+      border-left: 3px solid var(--primary-color);
+      color: rgba(245, 245, 245, 0.825);
+    }
+
+    .dark-mode .notification-item.unread .notification-item.ripple {
+      background: rgba(67, 97, 238, 0.25);
+    }
+
+    .notification-item:hover {
+      transform: translateX(5px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Zone Item */
+    .zone-item {
+      position: relative;
+      margin-bottom: 15px;
+      padding: 15px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .dark-mode .zone-item {
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .zone-item:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .zone-actions {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 10px;
+      color: #66cf5dd4;
+    }
+
+    .zone-actions i {
+      cursor: pointer;
+      padding: 5px;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+    }
+
+    .zone-actions i:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.1);
+    }
+
+    .zone-item {
+      color: #66cf5dd4;
+    }
+
+    .zone-item h4 {
+      color: #ffffffd4;
+    }
+
+    .delete-zone {
+      color: var(--danger-color);
+    }
+
+    .edit-zone {
+      color: var(--warning-color);
+    }
+
+    /* Settings Section */
+    .settings-section {
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .settings-section h3 {
+      margin-bottom: 15px;
+      font-size: 16px;
+      color: #66cf5dd4;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    /* Form Elements */
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #ffffffd4;
+    }
+
+    .dark-mode .form-group label {
+      color: #ffffffd4;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 10px 15px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--dark-color);
+      transition: all 0.3s ease;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .dark-mode .form-control {
+      background: rgba(0, 0, 0, 0.2);
+      color: var(--light-color);
+      border-color: rgba(0, 0, 0, 0.3);
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--primary-color);
+      color: white;
+      box-shadow: 0 4px 10px rgba(67, 97, 238, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(67, 97, 238, 0.4);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--dark-color);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .dark-mode .btn-outline {
+      color: var(--light-color);
+    }
+
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Ripple Effect */
+    .ripple {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ripple-effect {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.4);
+      transform: scale(0);
+      animation: ripple 0.6s linear;
+      pointer-events: none;
+    }
+
+    @keyframes ripple {
+      to {
+        transform: scale(2.5);
+        opacity: 0;
+      }
+    }
+
+    /* Overlay */
+    .panel-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1500;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+    }
+
+    .panel-overlay.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+      .panel {
+        width: 350px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      #sidebar {
+        position: fixed;
+        left: -280px;
+        width: 280px;
+        height: 100vh;
+        transition: left 0.3s ease;
+      }
+
+      #sidebar.visible {
+        left: 0;
+      }
+
+      .sidebar-collapsed {
+        left: -80px;
+        width: 80px !important;
+      }
+
+      .sidebar-collapsed.visible {
+        left: 0;
+      }
+
+      #main-content {
+        margin-left: 0 !important;
+      }
+
+      .toggle-sidebar {
+        display: none;
+      }
+
+      .mobile-menu-toggle {
+        display: flex !important;
+      }
+
+      .panel {
+        width: 100%;
+        max-width: 100%;
+        right: -100%;
+      }
+
+      .panel.visible {
+        right: 0;
+      }
+
+      .status-card {
+        width: calc(100% - 40px);
+        left: 20px;
+        right: 20px;
+      }
+
+      #sidebar {
+        position: fixed;
+        left: -280px;
+        width: 280px;
+        height: 100vh;
+        transition: left 0.3s ease;
+        z-index: 1000;
+        /* Ensure sidebar stays below the toggle button */
+      }
+
+      #sidebar.visible {
+        left: 0;
+      }
+
+      /* Update the mobile menu toggle styles */
+      .mobile-menu-toggle {
+        display: flex !important;
+        position: fixed;
+        left: 20px;
+        top: 20px;
+        z-index: 1100;
+        /* Higher than sidebar */
+        transition: all 0.3s ease;
+      }
+
+      #sidebar.visible+#main-content .mobile-menu-toggle {
+        left: 300px;
+        /* Move it to the right of the sidebar */
+        background: var(--primary-color);
+        color: white;
+      }
+
+      /* Hide map type selector when sidebar is visible */
+      #sidebar.visible~#main-content .map-type-selector {
+        display: none;
+      }
+
+      .header-left {
+        margin-left: 50px;
+        /* Create space for menu button */
+        transition: margin-left 0.3s ease;
+      }
+
+      .mobile-menu-toggle {
+        position: fixed;
+        left: 10px;
+        top: 15px;
+        z-index: 1100;
+        transition: left 0.3s ease;
+      }
+
+      #sidebar.visible~#main-content .header-left {
+        margin-left: 0;
+      }
+
+      #sidebar.visible~#main-content .mobile-menu-toggle {
+        left: calc(280px + 10px);
+        /* sidebar width + padding */
+      }
+    }
+
+    /* Mobile Menu Toggle */
+    .mobile-menu-toggle {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      border: 1px solid var(--glass-border);
+      cursor: pointer;
+      margin-right: 15px;
+      transition: all 0.3s ease;
+    }
+
+    .mobile-menu-toggle:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Blinking animation for marker */
+    .blinking-marker {
+      position: relative;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: 0 0 0 rgba(67, 97, 238, 0.7);
+      animation: pulse-marker 2s infinite;
+    }
+
+    @keyframes pulse-marker {
+      0% {
+        box-shadow: 0 0 0 0 rgba(67, 97, 238, 0.7);
+      }
+
+      70% {
+        box-shadow: 0 0 0 10px rgba(67, 97, 238, 0);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0 rgba(67, 97, 238, 0);
+      }
+    }
+
+    /* Loading Animation */
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Floating Action Button */
+    .fab {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 20px rgba(67, 97, 238, 0.3);
+      cursor: pointer;
+      z-index: 1000;
+      transition: all 0.3s ease;
+    }
+
+    .fab:hover {
+      transform: translateY(-5px) scale(1.1);
+      box-shadow: 0 10px 25px rgba(67, 97, 238, 0.4);
+    }
+
+    /* Empty State */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--gray-color);
+    }
+
+    .empty-state i {
+      font-size: 40px;
+      margin-bottom: 15px;
+      color: var(--primary-light);
+    }
+
+    .empty-state h4 {
+      font-size: 16px;
+      margin-bottom: 10px;
+      color: var(--dark-color);
+    }
+
+    .dark-mode .empty-state h4 {
+      color: var(--light-color);
+    }
+
+    .empty-state p {
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    /* Tooltip */
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
+
+    .tooltip .tooltip-text {
+      visibility: hidden;
+      width: 120px;
+      background-color: var(--dark-color);
+      color: white;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 12px;
+    }
+
+    .tooltip:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--primary-light);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--primary-color);
+    }
+
+    /* Improved text contrast for dark mode */
+    .dark-mode .detail-label,
+    .dark-mode .popup-time,
+    .dark-mode .history-time,
+    .dark-mode .form-control,
+    .dark-mode .btn-outline {
+      color: rgba(255, 255, 255, 0.8) !important;
+    }
+
+    .dark-mode .history-location,
+    .dark-mode .status-header h3,
+    .dark-mode .panel-header h3,
+    .dark-mode .settings-section h3 {
+      color: #66cf5dd4 !important;
+    }
+
+    /* Notification bell specific fixes */
+    .notification-bell {
+      position: relative;
+      z-index: 1001;
+      /* Ensure it's above other elements */
+    }
+
+    /* Initial load styles */
+    body:not(.dark-mode) {
+      --text-primary: #212529;
+      --text-secondary: #495057;
+    }
+
+    body.dark-mode {
+      --text-primary: #f8f9fa;
+      --text-secondary: #e9ecef;
+    }
+
+    /* Loading state for map */
+    #map.loading {
+      filter: brightness(0.8);
+      position: relative;
+    }
+
+    #map.loading::after {
+      content: "Loading map...";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: var(--primary-color);
+      font-weight: bold;
+      z-index: 1000;
+    }
+
+    .history-time {
+      color: #ffffffd4;
+    }
+
+    .history-location {
+      color: #66cf5dd4;
+    }
+
+    .mobile-menu-toggle .fa-times {
+      display: none;
+    }
+
+    .mobile-menu-toggle.sidebar-open .fa-bars {
+      display: none;
+    }
+
+    .mobile-menu-toggle.sidebar-open .fa-times {
+      display: block;
+    }
+
+    /* Notification Panel Header */
+    .panel-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    /* Notification Item with Delete Button */
+    .notification-item {
+      position: relative;
+      padding-right: 40px;
+      margin-bottom: 15px;
+    }
+
+    .notification-remove {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      color: var(--danger-color);
+      cursor: pointer;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+
+    .notification-remove:hover {
+      background: rgba(255, 51, 51, 0.1);
+    }
+
+    /* Clear All Button */
+    #clear-all-notifications {
+      margin-left: auto;
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app-container">
+    <!-- Sidebar -->
+    <div id="sidebar">
+      <div class="toggle-sidebar">
+        <i class="fas fa-chevron-left"></i>
+      </div>
+      <div class="logo">
+        <i class="fas fa-location-arrow"></i>
+        <h1>SmartVision</h1>
+      </div>
+
+      <div class="user-profile">
+        <div class="user-avatar">SC</div>
+        <div class="user-info">
+          <h3>Saniya</h3>
+          <p>Family Member</p>
+        </div>
+      </div>
+
+      <ul class="sidebar-menu">
+        <li><a href="#" class="active"><i class="fas fa-map-marked-alt"></i> <span class="menu-text">Live
+              Tracking</span></a></li>
+        <li><a href="#"><i class="fas fa-history"></i> <span class="menu-text">Location History</span></a></li>
+        <li><a href="#"><i class="fas fa-bell"></i> <span class="menu-text">Notifications</span></a></li>
+        <li><a href="#"><i class="fas fa-shield-alt"></i> <span class="menu-text">Safety Zones</span></a></li>
+        <li><a href="#"><i class="fas fa-cog"></i> <span class="menu-text">Settings</span></a></li>
+      </ul>
+
+      <div class="sidebar-footer">
+        SmartVision v2.0 © 2025
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content">
+      <!-- Header -->
+      <div id="header">
+        <div class="header-left" style="display: flex; align-items: center;">
+          <div class="mobile-menu-toggle">
+            <i class="fas fa-bars"></i>
+            <i class="fas fa-times" style="display: none;"></i>
+          </div>
+          <h2>Live Location Tracking</h2>
+        </div>
+        <div class="header-right">
+          <div class="theme-toggle">
+            <i class="fas fa-moon"></i>
+          </div>
+          <div class="notification-bell">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge">3</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Map Container -->
+      <div id="map-container">
+
+        <div id="map"></div>
+
+        <!-- Map Type Selector -->
+        <div class="map-type-selector">
+          <button class="map-type-btn active" id="satellite-btn">
+            <i class="fas fa-satellite"></i> Satellite
+          </button>
+          <button class="map-type-btn" id="street-btn">
+            <i class="fas fa-map"></i> Street
+          </button>
+        </div>
+
+        <!-- Map Controls -->
+        <div class="map-controls">
+          <button class="control-btn" id="zoom-in" title="Zoom In"><i class="fas fa-plus"></i></button>
+          <button class="control-btn" id="zoom-out" title="Zoom Out"><i class="fas fa-minus"></i></button>
+          <button class="control-btn" id="locate-btn" title="Locate"><i class="fas fa-location-arrow"></i></button>
+        </div>
+
+        <!-- Status Card -->
+        <div class="status-card animate__animated animate__fadeInUp">
+
+          <div class="status-header">
+            <h3>Current Status</h3>
+            <span class="status-badge">Safe</span>
+          </div>
+
+          <div class="status-details">
+            <div class="detail-row">
+              <span class="detail-label">Last Updated:</span>
+              <span class="detail-value" id="last-updated">Just now</span>
+            </div>
+
+            <div class="detail-row">
+              <span class="detail-label">Steps Today:</span>
+              <span class="detail-value" id="steps-status">0</span>
+            </div>
+
+            <div class="detail-row">
+              <span class="detail-label">Battery:</span>
+              <span class="detail-value" id="battery-status">85%</span>
+            </div>
+
+            <div class="detail-row">
+              <span class="detail-label">Signal:</span>
+              <span class="detail-value" id="signal-status">Strong</span>
+            </div>
+
+            <div class="detail-row">
+              <span class="detail-label">Speed:</span>
+              <span class="detail-value" id="speed-status">0 km/h</span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Panel -->
+  <div id="history-panel" class="panel">
+    <div class="panel-header">
+      <h3>Location History</h3>
+      <button class="btn btn-outline" id="close-history"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="history-list">
+      <!-- Dynamically populated -->
+      <div class="empty-state">
+        <i class="fas fa-history"></i>
+        <h4>No History Yet</h4>
+        <p>Your location history will appear here</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notifications Panel -->
+  <div id="notifications-panel" class="panel">
+    <div class="panel-header">
+      <h3>Notifications</h3>
+      <div class="panel-actions">
+        <button class="btn btn-outline ripple" id="close-notifications">
+          <i class="fas fa-times"></i>
+        </button>
+        <button class="btn btn-danger ripple" id="clear-all-notifications">
+          <i class="fas fa-trash-alt"></i> Clear All
+        </button>
+      </div>
+    </div>
+    <div id="notifications-list">
+      <!-- Notifications will be added here dynamically -->
+    </div>
+  </div>
+
+  <!-- Safety Zones Panel -->
+  <div id="zones-panel" class="panel">
+    <div class="panel-header">
+      <h3>Safety Zones</h3>
+      <button class="btn btn-outline" id="close-zones"><i class="fas fa-times"></i></button>
+    </div>
+    <button class="btn btn-primary ripple" id="add-zone-btn" style="margin-bottom: 20px;">
+      <i class="fas fa-plus"></i> Add New Zone
+    </button>
+    <div id="zones-list">
+      <!-- Dynamically populated -->
+      <div class="empty-state">
+        <i class="fas fa-map-marker-alt"></i>
+        <h4>No Safety Zones</h4>
+        <p>Create your first safety zone to get alerts</p>
+      </div>
+    </div>
+    <div id="zone-form" style="display: none;">
+      <div class="form-group">
+        <label>Zone Name</label>
+        <input type="text" class="form-control" id="zone-name" placeholder="Home, School, etc.">
+      </div>
+      <div class="form-group">
+        <label>Zone Radius (meters)</label>
+        <input type="number" class="form-control" id="zone-radius" value="500" min="100" max="5000">
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn btn-primary ripple" id="save-zone"><i class="fas fa-save"></i> Save Zone</button>
+        <button class="btn btn-outline ripple" id="cancel-zone"><i class="fas fa-times"></i> Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add this with your other panels -->
+  <div id="steps-history-panel" class="panel">
+    <div class="panel-header">
+      <h3>Step History</h3>
+      <button class="btn btn-outline" id="close-steps-history"><i class="fas fa-times"></i></button>
+    </div>
+    <div style="padding: 20px;">
+      <canvas id="stepsChart" width="400" height="300"></canvas>
+    </div>
+  </div>
+
+  <!-- Settings Panel -->
+  <div id="settings-panel" class="panel">
+    <div class="panel-header">
+      <h3>Settings</h3>
+      <button class="btn btn-outline" id="close-settings"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div class="settings-section">
+      <h3>Tracking Preferences</h3>
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="real-time-tracking" checked> Enable real-time tracking
+        </label>
+      </div>
+      <div class="form-group">
+        <label>Update Interval (seconds)</label>
+        <select class="form-control" id="update-interval">
+          <option value="3">3</option>
+          <option value="5" selected>5</option>
+          <option value="10">10</option>
+          <option value="30">30</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>Notification Preferences</h3>
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="notify-enter-zone" checked> Notify when entering safety zones
+        </label>
+      </div>
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="notify-exit-zone" checked> Notify when exiting safety zones
+        </label>
+      </div>
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="notify-low-battery" checked> Notify when battery is low
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>Map Preferences</h3>
+      <div class="form-group">
+        <label>Default Map View</label>
+        <select class="form-control" id="default-map-view">
+          <option value="satellite">Satellite</option>
+          <option value="street">Street</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="btn btn-primary ripple" id="save-settings" style="width: 100%; margin-top: 20px;">
+      <i class="fas fa-save"></i> Save Settings
+    </button>
+  </div>
+
+  <!-- Overlay -->
+  <div class="panel-overlay" id="panel-overlay"></div>
+
+  <!-- Floating Action Button -->
+  <div class="fab ripple" id="fab-help">
+    <i class="fas fa-question"></i>
+  </div>
+
+  <!-- Add these script includes before your main script -->
+  <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet-geometryutil"></script>
+
+  <script>
+    // Global variables
+    const API_KEY = "d94ac439be13424fbe4657fa056c688f"; // Your Geoapify key
+    let map, marker, updateInterval;
+    let lastPosition = { lat: 18.5280630553075, lng: 73.85322399573165 };
+    let isFirstUpdate = true;
+    let satelliteLayer, streetLayer, currentLayer;
+    let historyData = [];
+    let notifications = [];
+    let safetyZones = [];
+    let drawnItems = new L.FeatureGroup();
+    let drawControl;
+    let currentZone = null;
+    let dailySteps = 0;
+    let lastResetDate = new Date().getDate();
+    // Add with your other global variables
+    let lastLowStepNotificationDate = null;
+    let lowStepNotificationSent = false;
+
+    // Initialize map
+    function initMap() {
+      if (window.innerWidth <= 768) {
+        document.querySelector('.map-type-selector').style.display = 'flex';
+      }
+      // Create map with higher zoom capability
+      map = L.map('map', {
+        zoomControl: false,
+        maxZoom: 22,
+        minZoom: 1
+      }).setView([lastPosition.lat, lastPosition.lng], 15);
+
+      // Create tile layers
+      satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 22,
+        attribution: 'Tiles © Esri'
+      });
+
+      streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 22,
+        attribution: '© OpenStreetMap'
+      });
+
+      // Add default layer
+      satelliteLayer.addTo(map);
+      currentLayer = satelliteLayer;
+
+      // Create custom icon for the marker
+      const customIcon = L.divIcon({
+        html: '<div class="blinking-marker"><i class="fas fa-user"></i></div>',
+        className: 'custom-marker',
+        iconSize: [30, 30],
+        iconAnchor: [15, 30]
+      });
+
+      // Add marker with custom icon
+      marker = L.marker([lastPosition.lat, lastPosition.lng], {
+        icon: customIcon,
+        zIndexOffset: 1000
+      }).addTo(map);
+
+      // Set up custom popup
+      marker.bindPopup(`
+                <div class="custom-popup">
+                    <div class="popup-title">Aneesh Bhaiyya</div>
+                    <div class="popup-address">Loading address...</div>
+                    <div class="popup-time">Updating...</div>
+                </div>
+            `).openPopup();
+
+      // Add zoom controls
+      L.control.zoom({
+        position: 'topright'
+      }).addTo(map);
+
+      // Set up button events
+      document.getElementById('zoom-in').addEventListener('click', () => map.zoomIn());
+      document.getElementById('zoom-out').addEventListener('click', () => map.zoomOut());
+      document.getElementById('locate-btn').addEventListener('click', centerMapOnMarker);
+
+      // Map type selector events
+      document.getElementById('satellite-btn').addEventListener('click', () => {
+        map.removeLayer(currentLayer);
+        satelliteLayer.addTo(map);
+        currentLayer = satelliteLayer;
+        document.getElementById('satellite-btn').classList.add('active');
+        document.getElementById('street-btn').classList.remove('active');
+      });
+
+      document.getElementById('street-btn').addEventListener('click', () => {
+        map.removeLayer(currentLayer);
+        streetLayer.addTo(map);
+        currentLayer = streetLayer;
+        document.getElementById('street-btn').classList.add('active');
+        document.getElementById('satellite-btn').classList.remove('active');
+      });
+
+      // Toggle sidebar event
+      document.querySelector('.toggle-sidebar').addEventListener('click', () => {
+        document.getElementById('sidebar').classList.toggle('sidebar-collapsed');
+      });
+
+      // Update the mobile menu toggle event listener
+      document.querySelector('.mobile-menu-toggle').addEventListener('click', function (e) {
+        e.stopPropagation();
+        const sidebar = document.getElementById('sidebar');
+        const isVisible = sidebar.classList.toggle('visible');
+
+        // Toggle icons
+        const barsIcon = this.querySelector('.fa-bars');
+        const timesIcon = this.querySelector('.fa-times');
+        barsIcon.style.display = isVisible ? 'none' : 'block';
+        timesIcon.style.display = isVisible ? 'block' : 'none';
+
+        // Toggle map type selector visibility
+        const mapTypeSelector = document.querySelector('.map-type-selector');
+        if (window.innerWidth <= 768) {
+          mapTypeSelector.style.display = isVisible ? 'none' : 'flex';
+        }
+      });
+
+      setInterval(fetchUserData, 2000); // Update every 2 seconds
+      setupStepsChart();
+
+      // Update closeAllPanels function to ensure map type selector reappears
+      function closeAllPanels() {
+        document.querySelectorAll('.panel').forEach(el => {
+          el.classList.remove('visible');
+        });
+        document.getElementById('panel-overlay').classList.remove('visible');
+
+        // Also close the sidebar if it's open on mobile
+        if (window.innerWidth <= 768) {
+          const sidebar = document.getElementById('sidebar');
+          sidebar.classList.remove('visible');
+          const toggle = document.querySelector('.mobile-menu-toggle');
+          const barsIcon = toggle.querySelector('.fa-bars');
+          const timesIcon = toggle.querySelector('.fa-times');
+          barsIcon.style.display = 'block';
+          timesIcon.style.display = 'none';
+
+          // Make sure map type selector is visible again
+          document.querySelector('.map-type-selector').style.display = 'flex';
+        }
+      }
+
+      // Theme toggle
+      document.querySelector('.theme-toggle').addEventListener('click', toggleDarkMode);
+
+      // Start periodic updates
+      fetchGPSCoordinates();
+      updateInterval = setInterval(fetchGPSCoordinates, 5000);
+      initAdditionalFeatures();
+    }
+
+    // Toggle dark mode
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+      const icon = document.querySelector('.theme-toggle i');
+
+      // Update icon
+      if (document.body.classList.contains('dark-mode')) {
+        icon.classList.replace('fa-moon', 'fa-sun');
+        // Ensure all text is visible
+        document.querySelectorAll('.detail-value, .popup-title').forEach(el => {
+          el.style.color = 'white';
+        });
+      } else {
+        icon.classList.replace('fa-sun', 'fa-moon');
+        // Reset to light mode colors
+        document.querySelectorAll('.detail-value, .popup-title').forEach(el => {
+          el.style.color = '';
+        });
+      }
+
+      // Force redraw to prevent visual glitches
+      document.body.offsetHeight;
+    }
+
+    // Center map on the marker
+    function centerMapOnMarker() {
+      if (marker) {
+        map.setView(marker.getLatLng(), map.getZoom());
+      }
+    }
+
+    // Format time as "HH:MM:SS"
+    function formatTime(date) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    // Format date as "DD/MM/YYYY"
+    function formatDate(date) {
+      return date.toLocaleDateString([], { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    // Update status card
+    function updateStatusCard(lat, lng, speed) {
+      const now = new Date();
+      document.getElementById('last-updated').textContent = `${formatTime(now)} ${formatDate(now)}`;
+      // document.getElementById('speed-status').textContent = `${speed || 0} km/h`;
+
+      // Simulate battery drain for demo
+      // const batteryElement = document.getElementById('battery-status');
+      let battery = parseInt(batteryElement.textContent);
+      battery = battery <= 5 ? 85 : battery - 1;
+      batteryElement.textContent = `${battery}%`;
+      batteryElement.style.color = battery < 20 ? 'var(--danger-color)' : 'inherit';
+
+      // Update signal status randomly for demo
+      const signals = ['Weak', 'Fair', 'Good', 'Strong'];
+      document.getElementById('signal-status').textContent = signals[Math.floor(Math.random() * signals.length)];
+    }
+
+    function checkStepCount(dailySteps) {
+      const currentDate = new Date().getDate();
+      const currentHour = new Date().getHours();
+
+      // Reset notification tracking if it's a new day
+      if (lastLowStepNotificationDate !== currentDate) {
+        lowStepNotificationSent = false;
+        lastLowStepNotificationDate = currentDate;
+      }
+
+      // Your existing threshold check (example: < 100 steps by 2PM)
+      const isLowStepCount = dailySteps < 100 && currentHour >= 14;
+
+      if (isLowStepCount && !lowStepNotificationSent) {
+        showNotification("User has low step count today. Please check on them.", "alert");
+        lowStepNotificationSent = true; // Mark as sent
+
+        // Optional: Also log this to your notification history
+        addToNotificationHistory({
+          type: "low_steps",
+          message: "Low step count alert",
+          steps: dailySteps,
+          time: new Date()
+        });
+      }
+    }
+
+    async function fetchGPSCoordinates() {
+      try {
+        const response = await fetch("http://192.168.55.143:3000/latest-location");
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const { lat, lng } = await response.json();
+
+        if (lat && lng) {
+          lastPosition = { lat, lng };
+
+          // Debugging log
+          console.log("Updating marker to:", lat, lng);
+
+          // Update marker position
+          if (marker) {
+            marker.setLatLng([lat, lng]);
+
+            // Center map on first update
+            if (isFirstUpdate) {
+              map.setView([lat, lng], 17);
+              isFirstUpdate = false;
+            }
+
+            // Get address and update popup
+            const address = await getAddressFromGeoapify(lat, lng);
+            const now = new Date();
+            marker.setPopupContent(`
+                    <div class="custom-popup">
+                        <div class="popup-title">Aneesh Bhaiyya</div>
+                        <div class="popup-address">${address}</div>
+                        <div class="popup-time">Updated: ${formatTime(now)}</div>
+                    </div>
+                `);
+
+            // Update status card
+            updateStatusCard(lat, lng, calculateSpeed(lat, lng));
+
+            // Add to history
+            addToHistory(lat, lng, address);
+
+            // Check safety zones
+            checkSafetyZones(lat, lng);
+
+            // Check battery level
+            checkBatteryLevel();
+          } else {
+            console.error("Marker not initialized");
+          }
+        }
+      } catch (error) {
+        console.error("Update failed:", error);
+        // Show error to user
+        // showNotification("Failed to update location. Retrying...", "alert");
+      }
+    }
+
+    // Calculate speed based on position change (simplified)
+    function calculateSpeed(newLat, newLng) {
+      // In a real app, you would calculate distance/time between points
+      // For demo, we'll return a random speed between 0-5 km/h
+      return Math.floor(Math.random() * 5);
+    }
+
+    // Call Geoapify API to reverse geocode
+    async function getAddressFromGeoapify(lat, lng) {
+      try {
+        const url = `https://api.geoapify.com/v1/geocode/reverse?lat=${lat}&lon=${lng}&apiKey=${API_KEY}`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.features && data.features.length > 0) {
+          const props = data.features[0].properties;
+          return `${props.address_line1 || ''}, ${props.city || ''}, ${props.country || ''}`.trim();
+        }
+        return "Address not available";
+      } catch (error) {
+        console.error("Geocoding error:", error);
+        return "Could not fetch address";
+      }
+
+    }
+
+    // Initialize additional features
+    function initAdditionalFeatures() {
+      // Initialize history data
+      loadHistory();
+
+      // Initialize notifications
+      loadNotifications();
+
+      // Initialize safety zones
+      loadSafetyZones();
+
+      // Initialize drawing tools
+      map.addLayer(drawnItems);
+
+      drawControl = new L.Control.Draw({
+        position: 'topright',
+        draw: {
+          polygon: true,
+          polyline: false,
+          rectangle: false,
+          circle: true,
+          marker: false,
+          circlemarker: false
+        },
+        edit: {
+          featureGroup: drawnItems
+        }
+      });
+
+      map.addControl(drawControl);
+
+      // Setup event listeners for new panels
+      setupPanelEvents();
+
+      // Load settings
+      loadSettings();
+
+      // Setup ripple effects
+      setupRippleEffects();
+    }
+
+    // Setup ripple effects for buttons
+    function setupRippleEffects() {
+      document.querySelectorAll('.ripple').forEach(button => {
+        button.addEventListener('click', function (e) {
+          const rect = this.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+
+          const ripple = document.createElement('span');
+          ripple.className = 'ripple-effect';
+          ripple.style.left = `${x}px`;
+          ripple.style.top = `${y}px`;
+
+          this.appendChild(ripple);
+
+          setTimeout(() => {
+            ripple.remove();
+          }, 600);
+        });
+      });
+    }
+
+    // Load location history
+    function loadHistory() {
+      // In a real app, you would fetch this from your backend
+      historyData = [
+        { lat: 18.5280, lng: 73.8532, time: new Date(Date.now() - 3600000), address: "Home" },
+        { lat: 18.5300, lng: 73.8500, time: new Date(Date.now() - 7200000), address: "Coffee Shop" },
+        { lat: 18.5350, lng: 73.8600, time: new Date(Date.now() - 10800000), address: "Office" }
+      ];
+
+      renderHistory();
+    }
+
+    // Render history list
+    function renderHistory() {
+      const historyList = document.getElementById('history-list');
+      historyList.innerHTML = '';
+
+      if (historyData.length === 0) {
+        historyList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-history"></i>
+                        <h4>No History Yet</h4>
+                        <p>Your location history will appear here</p>
+                    </div>
+                `;
+        return;
+      }
+
+      historyData.forEach(item => {
+        const historyItem = document.createElement('div');
+        historyItem.className = 'history-item ripple';
+        historyItem.innerHTML = `
+                    <div style="margin-right: 15px;">
+                        <i class="fas fa-map-marker-alt" style="color: var(--primary-color); font-size: 20px;"></i>
+                    </div>
+                    <div>
+                        <div class="history-time">${formatDate(item.time)} ${formatTime(item.time)}</div>
+                        <div class="history-location">${item.address}</div>
+                    </div>
+                `;
+        historyItem.addEventListener('click', () => {
+          map.setView([item.lat, item.lng], 17);
+          closeAllPanels();
+        });
+        historyList.appendChild(historyItem);
+      });
+    }
+
+    // Add to history
+    function addToHistory(lat, lng, address) {
+      const now = new Date();
+      historyData.unshift({
+        lat: lat,
+        lng: lng,
+        time: now,
+        address: address || `${lat.toFixed(4)}, ${lng.toFixed(4)}`
+      });
+
+      // Keep only last 100 items
+      if (historyData.length > 100) {
+        historyData.pop();
+      }
+
+      renderHistory();
+    }
+
+    async function fetchUserData() {
+      try {
+        // Fetch both location and steps in parallel
+        const [locationResponse, stepsResponse] = await Promise.all([
+          fetch("http://192.168.55.143:3000/latest-location"),
+          fetch("http://192.168.55.143:3000/latest-steps")
+        ]);
+
+        if (!locationResponse.ok || !stepsResponse.ok) {
+          throw new Error('Failed to fetch data');
+        }
+
+        const locationData = await locationResponse.json();
+        const stepsData = await stepsResponse.json();
+        document.getElementById('steps-status').textContent = stepsData.totalSteps || 0;
+
+        // Update location if changed
+        if (locationData.lat && locationData.lng) {
+          lastPosition = { lat: locationData.lat, lng: locationData.lng };
+
+          if (marker) {
+            marker.setLatLng([locationData.lat, locationData.lng]);
+            
+            // Get address and update popup
+            const address = await getAddressFromGeoapify(locationData.lat, locationData.lng);
+            const now = new Date();
+            marker.setPopupContent(`
+                    <div class="custom-popup">
+                        <div class="popup-title">Aneesh Bhaiyya</div>
+                        <div class="popup-address">${address}</div>
+                        <div class="popup-time">Updated: ${formatTime(now)}</div>
+                    </div>
+                `);
+          }
+        }
+
+        // Update status card
+        const now = new Date();
+        document.getElementById('last-updated').textContent = `${formatTime(now)} ${formatDate(now)}`;
+
+      } catch (error) {
+        console.error("Failed to fetch user data:", error);
+
+        // Only show error notification if we haven't shown one recently
+        const lastErrorTime = localStorage.getItem('lastErrorTime') || 0;
+        if (Date.now() - lastErrorTime > 30000) { // 30 seconds
+          showNotification("Connection issue - data may not be current", "alert");
+          localStorage.setItem('lastErrorTime', Date.now());
+        }
+      }
+    }
+
+    // Update more frequently (every 2 seconds)
+    setInterval(fetchUserData, 2000);
+
+    function updateMapMarker(lat, lng) {
+      if (marker) {
+        marker.setLatLng([lat, lng]);
+
+        // Get address and update popup 
+        getAddressFromGeoapify(lat, lng).then(address => {
+          const now = new Date();
+          marker.setPopupContent(`
+        <div class="custom-popup">
+          <div class="popup-title">User Location</div>
+          <div class="popup-address">${address}</div>
+          <div class="popup-time">Updated: ${formatTime(now)}</div>
+          <div class="popup-steps">Steps Today: ${dailySteps}</div>
+        </div>
+      `);
+        });
+
+        // Center map on first update
+        if (isFirstUpdate) {
+          map.setView([lat, lng], 17);
+          isFirstUpdate = false;
+        }
+      }
+    }
+
+    // Load notifications
+    function loadNotifications() {
+      // In a real app, you would fetch this from your backend
+      notifications = [
+        {
+          id: 1,
+          title: "Entered Safety Zone",
+          message: "Arrived at Home",
+          time: new Date(Date.now() - 300000),
+          read: false,
+          type: "zone-enter"
+        },
+        {
+          id: 2,
+          title: "Low Battery Alert",
+          message: "Device battery is at 15%",
+          time: new Date(Date.now() - 1800000),
+          read: true,
+          type: "battery"
+        },
+        {
+          id: 3,
+          title: "New Location Update",
+          message: "Location updated at Coffee Shop",
+          time: new Date(Date.now() - 3600000),
+          read: false,
+          type: "location"
+        }
+      ];
+
+      renderNotifications();
+      updateNotificationBadge();
+    }
+
+    // Clear All Notifications
+    document.getElementById('clear-all-notifications').addEventListener('click', () => {
+      notifications = [];
+      renderNotifications();
+      updateNotificationBadge();
+    });
+
+    // Remove Single Notification
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('.notification-remove')) {
+        const id = parseInt(e.target.closest('.notification-remove').dataset.id);
+        notifications = notifications.filter(n => n.id !== id);
+        renderNotifications();
+        updateNotificationBadge();
+      }
+    });
+    // Render notifications
+    function renderNotifications() {
+      const notificationsList = document.getElementById('notifications-list');
+      notificationsList.innerHTML = '';
+
+      if (notifications.length === 0) {
+        notificationsList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-bell-slash"></i>
+                        <h4>No Notifications</h4>
+                        <p>Your notifications will appear here</p>
+                    </div>
+                `;
+        return;
+      }
+
+      notifications.forEach(notification => {
+        const notificationItem = document.createElement('div');
+        notificationItem.className = `notification-item ${notification.read ? '' : 'unread'} ripple`;
+        notificationItem.innerHTML = `
+                    <div style="margin-right: 15px;">
+                        <i class="fas ${getNotificationIcon(notification.type)}" 
+                           style="color: var(--primary-color); font-size: 20px;"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 500; margin-bottom: 5px;">${notification.title}</div>
+                        <div style="font-size: 13px; margin-bottom: 5px;">${notification.message}</div>
+                        <div style="font-size: 11px; color: var(--gray-color);">${formatTime(notification.time)}</div>
+                    </div>
+                `;
+        notificationItem.addEventListener('click', () => {
+          markNotificationAsRead(notification.id);
+          if (notification.type === 'zone-enter' || notification.type === 'zone-exit') {
+            const zone = safetyZones.find(z => z.name === notification.message.split(' ').pop());
+            if (zone) {
+              map.setView([zone.lat, zone.lng], 15);
+            }
+          }
+        });
+        notificationsList.appendChild(notificationItem);
+      });
+    }
+
+    function getNotificationIcon(type) {
+      switch (type) {
+        case 'zone-enter': return 'fa-sign-in-alt';
+        case 'zone-exit': return 'fa-sign-out-alt';
+        case 'battery': return 'fa-battery-quarter';
+        case 'location': return 'fa-map-marker-alt';
+        default: return 'fa-bell';
+      }
+    }
+
+    function markNotificationAsRead(id) {
+      const notification = notifications.find(n => n.id === id);
+      if (notification && !notification.read) {
+        notification.read = true;
+        renderNotifications();
+        updateNotificationBadge();
+      }
+    }
+
+    function updateNotificationBadge() {
+      const unreadCount = notifications.filter(n => !n.read).length;
+      const badge = document.querySelector('.notification-badge');
+      badge.textContent = unreadCount;
+      badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+    }
+
+    // Load safety zones
+    function loadSafetyZones() {
+      // Load from localStorage if available
+      const stored = localStorage.getItem('safetyZones');
+      if (stored) {
+        try {
+          safetyZones = JSON.parse(stored);
+        } catch (e) {
+          console.warn('Failed to parse stored safety zones');
+          safetyZones = [];
+        }
+      } else {
+        safetyZones = []; // No default zones - user will add manually
+      }
+
+      renderSafetyZones();
+      drawZonesOnMap();
+    }
+
+    // Render safety zones list
+    function renderSafetyZones() {
+      const zonesList = document.getElementById('zones-list');
+      zonesList.innerHTML = '';
+
+      if (safetyZones.length === 0) {
+        zonesList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <h4>No Safety Zones</h4>
+                        <p>Create your first safety zone to get alerts</p>
+                    </div>
+                `;
+        return;
+      }
+
+      safetyZones.forEach(zone => {
+        const zoneItem = document.createElement('div');
+        zoneItem.className = 'zone-item ripple';
+        zoneItem.innerHTML = `
+                    <div class="zone-actions">
+                        <i class="fas fa-edit edit-zone" data-id="${zone.id}"></i>
+                        <i class="fas fa-trash delete-zone" data-id="${zone.id}"></i>
+                    </div>
+                    <h4 style="margin-bottom: 5px;">${zone.name}</h4>
+                    <div style="font-size: 13px; margin-bottom: 5px;">Radius: ${zone.radius}m</div>
+                    <div style="font-size: 12px; color: var(--gray-color);">${zone.lat.toFixed(4)}, ${zone.lng.toFixed(4)}</div>
+                `;
+        zoneItem.addEventListener('click', () => {
+          map.setView([zone.lat, zone.lng], 15);
+        });
+        zonesList.appendChild(zoneItem);
+      });
+
+      // Add event listeners to delete buttons
+      document.querySelectorAll('.delete-zone').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteZone(parseInt(btn.dataset.id));
+        });
+      });
+
+      // Add event listeners to edit buttons
+      document.querySelectorAll('.edit-zone').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          editZone(parseInt(btn.dataset.id));
+        });
+      });
+    }
+
+    // Draw zones on map
+    function drawZonesOnMap() {
+      // Clear existing zones
+      drawnItems.clearLayers();
+
+      safetyZones.forEach(zone => {
+        const circle = L.circle([zone.lat, zone.lng], {
+          radius: zone.radius,
+          color: '#4361ee',
+          fillColor: '#4cc9f0',
+          fillOpacity: 0.2
+        }).addTo(drawnItems);
+
+        circle.bindPopup(`<b>${zone.name}</b><br>Radius: ${zone.radius}m`);
+      });
+    }
+
+    // Delete zone
+    function deleteZone(id) {
+      if (confirm('Are you sure you want to delete this safety zone?')) {
+        safetyZones = safetyZones.filter(zone => zone.id !== id);
+        renderSafetyZones();
+        drawZonesOnMap();
+        saveSafetyZones();
+        showNotification("Safety zone deleted", "success");
+      }
+    }
+
+    let stepsChart;
+
+    function setupStepsChart() {
+      const ctx = document.getElementById('stepsChart').getContext('2d');
+      stepsChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: Array(24).fill().map((_, i) => `${i}:00`),
+          datasets: [{
+            label: 'Steps per hour',
+            data: Array(24).fill(0),
+            borderColor: '#4361ee',
+            backgroundColor: 'rgba(67, 97, 238, 0.1)',
+            tension: 0.3,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: 'top',
+            },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Steps'
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'Time of day'
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Edit zone
+    function editZone(id) {
+      const zone = safetyZones.find(z => z.id === id);
+      if (!zone) return;
+
+      document.getElementById('zone-name').value = zone.name;
+      document.getElementById('zone-radius').value = zone.radius;
+      document.getElementById('zones-list').style.display = 'none';
+      document.getElementById('zone-form').style.display = 'block';
+
+      // Store temporary zone data
+      currentZone = {
+        id: zone.id,
+        lat: zone.lat,
+        lng: zone.lng,
+        radius: zone.radius
+      };
+
+      // Center map on the zone
+      map.setView([zone.lat, zone.lng], 15);
+    }
+
+    // Save safety zones (in a real app, this would call your backend)
+    function saveSafetyZones() {
+      // Save to localStorage for persistence
+      try {
+        localStorage.setItem('safetyZones', JSON.stringify(safetyZones));
+        console.log("Safety zones saved to localStorage:", safetyZones);
+      } catch (e) {
+        console.warn('Failed to save safety zones to localStorage:', e);
+      }
+      // Here you would typically make an API call to your backend
+    }
+
+    // Check safety zones
+    function checkSafetyZones(lat, lng) {
+      safetyZones.forEach(zone => {
+        const distance = L.GeometryUtil.distance(map, L.latLng(lat, lng), L.latLng(zone.lat, zone.lng));
+        const isInsideZone = distance <= zone.radius;
+        const wasInsideZone = zone.inside;
+
+        if (isInsideZone && !wasInsideZone) {
+          // Entered zone
+          zone.inside = true;
+          if (document.getElementById('notify-enter-zone').checked) {
+            showNotification(`Entered safety zone: ${zone.name}`, "success");
+          }
+        } else if (!isInsideZone && wasInsideZone) {
+          // Exited zone - this is a boundary violation
+          zone.inside = false;
+          if (document.getElementById('notify-exit-zone').checked) {
+            showNotification(`⚠️ BOUNDARY VIOLATION: Exited safety zone "${zone.name}"`, "alert");
+          }
+        }
+      });
+
+      // Check if device is outside ALL safety zones
+      const isOutsideAllZones = safetyZones.length > 0 && safetyZones.every(zone => !zone.inside);
+      if (isOutsideAllZones && safetyZones.length > 0) {
+        // Show boundary violation alert
+        if (!window.lastBoundaryAlert || Date.now() - window.lastBoundaryAlert > 60000) { // Throttle to once per minute
+          showNotification("🚨 ALERT: Device is outside all safety zones!", "alert");
+          window.lastBoundaryAlert = Date.now();
+        }
+      }
+    }
+
+    // Check battery level
+    function checkBatteryLevel() {
+      const batteryElement = document.getElementById('battery-status');
+      let battery = parseInt(batteryElement.textContent);
+
+      // Simulate battery drain
+      battery = battery <= 5 ? 85 : battery - 1;
+
+      // Update display
+      batteryElement.textContent = `${battery}%`;
+      batteryElement.style.color = battery < 20 ? 'var(--danger-color)' : 'inherit';
+
+      // Low battery notification
+      if (battery < 20 && document.getElementById('notify-low-battery').checked) {
+        showNotification(`Low battery warning: ${battery}% remaining`, "alert");
+      }
+    }
+
+    // Load settings
+    function loadSettings() {
+      // In a real app, you would fetch this from localStorage or your backend
+      const settings = {
+        realTimeTracking: true,
+        updateInterval: 5,
+        notifyEnterZone: true,
+        notifyExitZone: true,
+        notifyLowBattery: true,
+        defaultMapView: 'satellite'
+      };
+
+      // Apply settings to UI
+      document.getElementById('real-time-tracking').checked = settings.realTimeTracking;
+      document.getElementById('update-interval').value = settings.updateInterval;
+      document.getElementById('notify-enter-zone').checked = settings.notifyEnterZone;
+      document.getElementById('notify-exit-zone').checked = settings.notifyExitZone;
+      document.getElementById('notify-low-battery').checked = settings.notifyLowBattery;
+      document.getElementById('default-map-view').value = settings.defaultMapView;
+
+      // Apply settings to app
+      if (settings.defaultMapView === 'street') {
+        document.getElementById('street-btn').click();
+      }
+
+      if (updateInterval) {
+        clearInterval(updateInterval);
+      }
+      updateInterval = setInterval(fetchGPSCoordinates, settings.updateInterval * 1000);
+    }
+
+    // Save settings
+    function saveSettings() {
+      const settings = {
+        realTimeTracking: document.getElementById('real-time-tracking').checked,
+        updateInterval: parseInt(document.getElementById('update-interval').value),
+        notifyEnterZone: document.getElementById('notify-enter-zone').checked,
+        notifyExitZone: document.getElementById('notify-exit-zone').checked,
+        notifyLowBattery: document.getElementById('notify-low-battery').checked,
+        defaultMapView: document.getElementById('default-map-view').value
+      };
+
+      console.log("Saving settings:", settings);
+      // Here you would typically save to localStorage or your backend
+
+      // Apply settings
+      if (updateInterval) {
+        clearInterval(updateInterval);
+      }
+      updateInterval = setInterval(fetchGPSCoordinates, settings.updateInterval * 1000);
+
+      showNotification("Settings saved successfully", "success");
+      closeAllPanels();
+    }
+
+    // Show notification
+    function showNotification(message, type = 'info') {
+      const newNotification = {
+        id: Date.now(),
+        title: type === 'info' ? 'Notification' : type === 'success' ? 'Success' : 'Alert',
+        message: message,
+        time: new Date(),
+        read: false,
+        type: type
+      };
+
+      notifications.unshift(newNotification);
+      renderNotifications();
+      updateNotificationBadge();
+
+      // Visual alert
+      const notificationSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-beep-989.mp3');
+      notificationSound.play().catch(e => console.log("Audio play failed:", e));
+    }
+
+    document.querySelector('.notification-bell').addEventListener('click', function (e) {
+      e.stopPropagation(); // Prevent event bubbling
+      togglePanel('notifications');
+    });
+
+    // Setup panel events
+    function setupPanelEvents() {
+      // Panel toggle buttons
+      document.querySelector('.sidebar-menu li:nth-child(2) a').addEventListener('click', (e) => {
+        e.preventDefault();
+        togglePanel('history');
+      });
+
+      document.querySelector('.sidebar-menu li:nth-child(3) a').addEventListener('click', (e) => {
+        e.preventDefault();
+        togglePanel('notifications');
+      });
+
+      document.querySelector('.sidebar-menu li:nth-child(4) a').addEventListener('click', (e) => {
+        e.preventDefault();
+        togglePanel('zones');
+      });
+
+      document.querySelector('.sidebar-menu li:nth-child(5) a').addEventListener('click', (e) => {
+        e.preventDefault();
+        togglePanel('settings');
+      });
+
+      // Close buttons
+      document.getElementById('close-history').addEventListener('click', () => closeAllPanels());
+      document.getElementById('close-notifications').addEventListener('click', () => closeAllPanels());
+      document.getElementById('close-zones').addEventListener('click', () => closeAllPanels());
+      document.getElementById('close-settings').addEventListener('click', () => closeAllPanels());
+
+      // Overlay click
+      document.getElementById('panel-overlay').addEventListener('click', closeAllPanels);
+
+      // Zone management
+      document.getElementById('add-zone-btn').addEventListener('click', () => {
+        document.getElementById('zones-list').style.display = 'none';
+        document.getElementById('zone-form').style.display = 'block';
+        map.on('click', handleMapClickForZone);
+        currentZone = null;
+      });
+
+      document.getElementById('cancel-zone').addEventListener('click', () => {
+        document.getElementById('zones-list').style.display = 'block';
+        document.getElementById('zone-form').style.display = 'none';
+        map.off('click', handleMapClickForZone);
+        currentZone = null;
+      });
+
+      document.getElementById('save-zone').addEventListener('click', saveNewZone);
+
+      // Save settings
+      document.getElementById('save-settings').addEventListener('click', saveSettings);
+
+      // Map drawing events
+      map.on(L.Draw.Event.CREATED, function (e) {
+        const layer = e.layer;
+        drawnItems.addLayer(layer);
+
+        if (layer instanceof L.Circle) {
+          const center = layer.getLatLng();
+          const radius = layer.getRadius();
+
+          document.getElementById('zone-name').value = `Zone ${safetyZones.length + 1}`;
+          document.getElementById('zone-radius').value = Math.round(radius);
+          document.getElementById('zones-list').style.display = 'none';
+          document.getElementById('zone-form').style.display = 'block';
+
+          // Store temporary zone data
+          currentZone = {
+            lat: center.lat,
+            lng: center.lng,
+            radius: Math.round(radius)
+          };
+        }
+      });
+
+      // History button
+      document.getElementById('show-history').addEventListener('click', () => {
+        togglePanel('history');
+      });
+
+      // Notification bell
+      document.querySelector('.notification-bell').addEventListener('click', () => {
+        togglePanel('notifications');
+      });
+
+      // FAB help button
+      document.getElementById('fab-help').addEventListener('click', () => {
+        showNotification("Need help? Contact our support team.", "info");
+      });
+    }
+
+    function handleMapClickForZone(e) {
+      currentZone = {
+        lat: e.latlng.lat,
+        lng: e.latlng.lng
+      };
+    }
+
+    function saveNewZone() {
+      const name = document.getElementById('zone-name').value;
+      const radius = parseInt(document.getElementById('zone-radius').value);
+
+      if (!name || !radius) {
+        alert('Please complete all zone information');
+        return;
+      }
+
+      if (!currentZone || !currentZone.lat || !currentZone.lng) {
+        alert('Please click on the map to set the zone location');
+        return;
+      }
+
+      if (currentZone.id) {
+        // Update existing zone
+        const index = safetyZones.findIndex(z => z.id === currentZone.id);
+        if (index !== -1) {
+          safetyZones[index] = {
+            id: currentZone.id,
+            name: name,
+            lat: currentZone.lat,
+            lng: currentZone.lng,
+            radius: radius,
+            inside: safetyZones[index].inside
+          };
+          showNotification(`Safety zone "${name}" updated`, "success");
+        }
+      } else {
+        // Create new zone
+        const newZone = {
+          id: Date.now(),
+          name: name,
+          lat: currentZone.lat,
+          lng: currentZone.lng,
+          radius: radius,
+          inside: false
+        };
+        safetyZones.push(newZone);
+        showNotification(`Safety zone "${name}" created`, "success");
+      }
+
+      renderSafetyZones();
+      drawZonesOnMap();
+      saveSafetyZones();
+
+      document.getElementById('zones-list').style.display = 'block';
+      document.getElementById('zone-form').style.display = 'none';
+      document.getElementById('zone-name').value = '';
+      document.getElementById('zone-radius').value = '500';
+
+      map.off('click', handleMapClickForZone);
+      currentZone = null;
+    }
+
+
+    // Toggle panels
+    function togglePanel(panelName) {
+      closeAllPanels();
+
+      const panel = document.getElementById(`${panelName}-panel`);
+      const overlay = document.getElementById('panel-overlay');
+
+      // Special handling for notifications
+      if (panelName === 'notifications') {
+        // Mark all notifications as read when opening
+        notifications.forEach(n => n.read = true);
+        updateNotificationBadge();
+      }
+
+      panel.classList.add('visible');
+      overlay.classList.add('visible');
+    }
+
+
+    // Close all panels
+    function closeAllPanels() {
+      document.querySelectorAll('.panel').forEach(el => {
+        el.classList.remove('visible');
+      });
+      document.getElementById('panel-overlay').classList.remove('visible');
+    }
+
+    // Initialize map when page loads
+    window.onload = initMap;
+
+  </script>
+</body>
+
+</html>

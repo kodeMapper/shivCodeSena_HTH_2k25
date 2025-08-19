@@ -1,0 +1,140 @@
+/* Leaflet styles override */
+.leaflet-container {
+  height: 100% !important;
+  width: 100% !important;
+  border-radius: inherit;
+  z-index: 1;
+}
+
+.leaflet-control-zoom {
+  display: none !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(10px) !important;
+  border-radius: 8px !important;
+  margin: 8px !important;
+  font-size: 10px !important;
+}
+
+.custom-device-marker {
+  background: none !important;
+  border: none !important;
+}
+
+/* Ensure no extra hover animations; let Leaflet control transforms for correct positioning */
+.leaflet-marker-icon.custom-device-marker,
+.leaflet-marker-icon.custom-device-marker:hover,
+.leaflet-marker-icon.custom-device-marker:focus,
+.leaflet-marker-icon.custom-device-marker:active {
+  transition: none !important;
+  will-change: auto !important;
+}
+
+/* Stable location marker - prevent movement on hover */
+
+/* Stable location marker - absolutely prevent movement on hover or interaction */
+.stable-location-marker,
+.leaflet-marker-icon.stable-location-marker,
+.leaflet-marker-icon.stable-location-marker:hover,
+.leaflet-marker-icon.stable-location-marker:focus,
+.leaflet-marker-icon.stable-location-marker:active {
+  background: none !important;
+  border: none !important;
+  transition: none !important;
+  will-change: auto !important;
+}
+
+.stable-location-marker *,
+.leaflet-marker-icon.stable-location-marker *,
+.leaflet-marker-icon.stable-location-marker:hover *,
+.leaflet-marker-icon.stable-location-marker:focus *,
+.leaflet-marker-icon.stable-location-marker:active * {
+  transition: none !important;
+  will-change: auto !important;
+}
+
+/* Custom marker resets: do NOT override Leaflet positioning */
+.leaflet-marker-icon.custom-marker {
+  background: none !important;
+  border: none !important;
+}
+
+/* Removed blinking marker and its animations */
+
+/* Custom popup styles (from original implementation) */
+.custom-popup {
+  font-family: 'Poppins', sans-serif;
+}
+
+.popup-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: rgb(0, 0, 100);
+}
+
+.popup-address {
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+.popup-time {
+  font-size: 11px;
+  color: black;
+}
+
+.leaflet-popup-content-wrapper {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+.leaflet-popup-tip {
+  background: rgba(255, 255, 255, 0.95) !important;
+}
+
+.leaflet-popup-close-button {
+  color: #64748b !important;
+  font-size: 16px !important;
+  font-weight: bold !important;
+}
+
+.leaflet-popup-close-button:hover {
+  color: #334155 !important;
+}
+
+/* Fix for map display */
+.leaflet-tile-pane {
+  filter: none !important;
+}
+
+.leaflet-map-pane {
+  z-index: 1 !important;
+}
+
+.leaflet-tile {
+  max-width: none !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .leaflet-popup-content-wrapper {
+    background: rgba(30, 41, 59, 0.95) !important;
+    color: white !important;
+  }
+  
+  .leaflet-popup-tip {
+    background: rgba(30, 41, 59, 0.95) !important;
+  }
+  
+  .leaflet-control-attribution {
+    background: rgba(30, 41, 59, 0.8) !important;
+    color: white !important;
+  }
+  
+  .leaflet-control-attribution a {
+    color: #93c5fd !important;
+  }
+}
