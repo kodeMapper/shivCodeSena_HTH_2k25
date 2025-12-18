@@ -2,22 +2,25 @@
   "version": 2,
   "builds": [
     {
-      "src": "server/server.js",
-      "use": "@vercel/node"
+      "src": "server/enhanced-server.js",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["data/**"]
+      }
     },
     {
-      "src": "public/**",
-      "use": "@vercel/static"
+      "src": "frontend/package.json",
+      "use": "@vercel/next"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "server/server.js"
+      "dest": "/server/enhanced-server.js"
     },
     {
       "src": "/(.*)",
-      "dest": "public/$1"
+      "dest": "/frontend/$1"
     }
   ]
 }

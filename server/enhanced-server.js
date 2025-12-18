@@ -9,6 +9,7 @@ const validator = require('validator');
 const NodeCache = require('node-cache');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 require('dotenv').config();
 
 const app = express();
@@ -110,13 +111,24 @@ class DataStore {
     this.maxHistoryLength = 100;
     
     // File paths for persistence
-    this.safetyZonesFile = path.join(__dirname, '../data/safety-zones.json');
-    this.deviceZoneStatusFile = path.join(__dirname, '../data/device-zone-status.json');
+    const isVercel = process.env.VERCEL === '1';
+    this.initialSafetyZonesFile = path.join(__dirname, '../data/safety-zones.json');
+    this.initialDeviceZoneStatusFile = path.join(__dirname, '../data/device-zone-status.json');
+
+    if (isVercel) {
+        this.safetyZonesFile = path.join(os.tmpdir(), 'safety-zones.json');
+        this.deviceZoneStatusFile = path.join(os.tmpdir(), 'device-zone-status.json');
+    } else {
+        this.safetyZonesFile = this.initialSafetyZonesFile;
+        this.deviceZoneStatusFile = this.initialDeviceZoneStatusFile;
+    }
     
-    // Ensure data directory exists
-    const dataDir = path.dirname(this.safetyZonesFile);
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
+    // Ensure data directory exists (only for local)
+    if (!isVercel) {
+        const dataDir = path.dirname(this.safetyZonesFile);
+        if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+        }
     }
     
     this.loadPersistedData();
@@ -128,8 +140,13 @@ class DataStore {
   loadPersistedData() {
     try {
       // Load safety zones
-      if (fs.existsSync(this.safetyZonesFile)) {
-        const zonesData = JSON.parse(fs.readFileSync(this.safetyZonesFile, 'utf8'));
+      let zonesFileToRead = this.safetyZonesFile;
+      if (!fs.existsSync(zonesFileToRead) && fs.existsSync(this.initialSafetyZonesFile)) {
+          zonesFileToRead = this.initialSafetyZonesFile;
+      }
+
+      if (fs.existsSync(zonesFileToRead)) {
+        const zonesData = JSON.parse(fs.readFileSync(zonesFileToRead, 'utf8'));
         Object.entries(zonesData).forEach(([id, zone]) => {
           this.safetyZones.set(id, zone);
         });
@@ -137,8 +154,13 @@ class DataStore {
       }
       
       // Load device zone status
-      if (fs.existsSync(this.deviceZoneStatusFile)) {
-        const statusData = JSON.parse(fs.readFileSync(this.deviceZoneStatusFile, 'utf8'));
+      let statusFileToRead = this.deviceZoneStatusFile;
+      if (!fs.existsSync(statusFileToRead) && fs.existsSync(this.initialDeviceZoneStatusFile)) {
+          statusFileToRead = this.initialDeviceZoneStatusFile;
+      }
+
+      if (fs.existsSync(statusFileToRead)) {
+        const statusData = JSON.parse(fs.readFileSync(statusFileToRead, 'utf8'));
         Object.entries(statusData).forEach(([deviceId, zoneStatuses]) => {
           const statusMap = new Map();
           Object.entries(zoneStatuses).forEach(([zoneId, status]) => {
@@ -1619,9 +1641,11 @@ process.on('SIGINT', () => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  logger.info(`🚀 Enhanced Family Safety Tracker API running on port ${PORT}`);
-  logger.info(`📊 Health check available at http://localhost:${PORT}/api/health`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    logger.info(`🚀 Enhanced Family Safety Tracker API running on port ${PORT}`);
+    logger.info(`📊 Health check available at http://localhost:${PORT}/api/health`);
+  });
+}
 
 module.exports = app;
